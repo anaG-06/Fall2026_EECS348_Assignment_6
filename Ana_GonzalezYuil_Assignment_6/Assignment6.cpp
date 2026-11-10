@@ -1,5 +1,5 @@
     /*
-    Program name: Assignment5 (revision of Assignment4)
+    Program name: Assignment6 (revision of Assignment5)
     Program description: 
         a C++ program that solves sudoku puzzles 
         using an object oriented, recursive approach 
