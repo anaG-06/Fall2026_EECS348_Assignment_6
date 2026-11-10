@@ -27,6 +27,10 @@
     Revision Date: 10/28
     New revisions marked by REVISIONS: 
 
+    Revised by: Ana Gonzalez Yuil
+    Revision Date: 11.10.26
+    Sources used: 
+    Revisions: additional comments (for personal understanding)
     */
 
     /**
@@ -77,6 +81,7 @@
         bool loadFromFile(const std::string& filename) {// *** takes input variable by reference (does not create a copy)
             int filledCells = 0; // *** holds amount of filled cells in unsolved sudoku grid
             
+            //check if file exists/can be opened
             std::ifstream file(filename);
             if (!file.is_open()) {
                 return false;
@@ -108,6 +113,7 @@
             // file.close();  CODE CHANGE: Removed this line to allow for the next checks to happen (Andy Garcia)
 
             // REVISION: Reject extra values that exceed the 9x9 grid
+            // if the outstream execceds the expected dimensions, extraCharacter will not be empty and therfore cause a return false
             char extraCharacter;
             if (file >> extraCharacter) {
                 return false;
@@ -181,6 +187,7 @@
          * @return true if no given number conflicts with another, false otherwise.
          */
         // Added givensAreConsistent() function. Code implemented by Andy Garcia suggested by Claude.
+        // checks that numbers do not repeat in compliance with sudoku rules
         bool givensAreConsistent() {
             for (int i = 0; i < 9; ++i) {
                 for (int j = 0; j < 9; ++j) {
