@@ -29,8 +29,9 @@
 
     Revised by: Ana Gonzalez Yuil
     Revision Date: 11.10.26
-    Sources used: 
-    Revisions: additional comments (for personal understanding)
+    Sources used: Gemini
+    Revisions: additional comments (for personal understanding), 
+               modified ProcessPuzzle() and main() to write output to a single file with suggestions from Gemini
     */
 
     /**
@@ -258,44 +259,42 @@
 
         /**
          * @brief Helper function to process, solve, and print the results for a specific puzzle file.
+         * MODIFICATION: changed to write results of all puzzles to a single outstream
          * 
          * @param filename The file name containing the puzzle.
+         * @param outFile the single shared outstream. (MODIFICATION)
          */
-        static void processPuzzle(const std::string& filename) {
-            std::cout << "========================================\n";
-            std::cout << "Puzzle Filename: " << filename << "\n";
-            std::cout << "========================================\n";
+        static void processPuzzle(const std::string& filename, std::ofstream& outFile) {
+            //MODIFICATION: omit output to terminal
+            // std::cout << "========================================\n";
+            // std::cout << "Puzzle Filename: " << filename << "\n";
+            // std::cout << "========================================\n";
 
-            // REVISION: Derive the output filename by replacing the "puzzle" prefix with "solution".
-            // For example, "puzzle3.txt" becomes "solution3.txt".
-            std::string outputFilename = "solution" + filename.substr(6);
-
-            // REVISION: Open the output file so this puzzle's results are written separately.
-            std::ofstream outputFile(outputFilename);
-
-            // REVISION: Report an output-file error rather than silently losing the results.
-            if (!outputFile.is_open()) {
-                std::cout << "Error: Could not create output file " << outputFilename << ".\n\n";
-                return;
-            }
+            //MODIFICATION: Extract the current puzzle number from the input filename,
+            // and then write the line stating the current puzzle to the outstream
+            size_t startPos = 6; // starts at 6 (this is the index after the word puzzle)
+            size_t endPos = filename.find('.',startPos); // where the file number ends, searches for '.' starting from startPos
+            std::string puzzleNum = filename.substr(startPos, endPos - startPos); //extracts full number from file
+            outFile << "Puzzle: " << puzzleNum << "\n";
 
             SudokuPuzzle puzzle;
 
             // Attempt to load the puzzle from the file
             if (!puzzle.loadFromFile(filename)) {
-                std::cout << "Error: Could not open file " << filename
-                        << " or puzzle input is invalid.\n\n";
+                // MODIFICATION: omit output to terminal
+                // std::cout << "Error: Could not open file " << filename
+                //         << " or puzzle input is invalid.\n\n";
 
-                // REVISION: Write the no solution message when the puzzle does not open
-                outputFile << "No solution found.\n";
-                outputFile.close(); // REVISION: Close file after the error occurs
+                //MODIFICATION: write file error to output file if puzzle could not be loaded
+                outFile << "Could not open file or puzzle input is invalid.\n";
                 return;
             }
 
-            // Print the initial unsolved puzzle
-            std::cout << "Unsolved Puzzle:\n";
-            puzzle.print();
-            std::cout << "\n";
+            // MODIFICATION: omit output to terminal
+            // // Print the initial unsolved puzzle
+            // std::cout << "Unsolved Puzzle:\n";
+            // puzzle.print();
+            // std::cout << "\n";
 
             // Containers to store solutions and solution counts
             int solutionCount = 0;
@@ -304,41 +303,39 @@
             // Execute backtracking solver
             puzzle.solveAll(solutionCount, solutions);
 
-            // Print number of solutions
-            std::cout << "Number of Solutions: " << solutionCount << "\n\n";
+            // MODIFICATION: omit output to terminal
+            // // Print number of solutions
+            // std::cout << "Number of Solutions: " << solutionCount << "\n\n";
 
             // Print puzzle solution(s) or "no solution found" message
             if (solutionCount == 0) {
-                std::cout << "no solution found\n\n";
+                // std::cout << "no solution found\n\n"; //omit terminal output 
 
-                // REVISION: Only put the no solution found message on the output file and nothing else
-                outputFile << "No solution found.\n";
+                //MODIFICATION: if no solution found, write result to outstream
+                outFile << "No solution found.\n\n";
             } else {
                 // *** if solutions exist, print each solution using the size of the solutions vector as limit
                 // *** s indicates which solution is being printed
                 for (size_t s = 0; s < solutions.size(); ++s) {
-                    std::cout << "Solution " << (s + 1) << ":\n";
+                    // std::cout << "Solution " << (s + 1) << ":\n"; //omit terminal output 
 
-                    // REVISION: Write the solution the same way as the input was given
+                    // MODIFICATION: Write the solution to the shared outstream
                     for (int i = 0; i < 9; ++i) {
                         for (int j = 0; j < 9; ++j) {
-                            std::cout << solutions[s][i][j] << " ";
-                            outputFile << solutions[s][i][j] << " "; // REVISION: Save each cell to the file piece by piece
+                            // std::cout << solutions[s][i][j] << " "; //omit
+                            outFile << solutions[s][i][j] << " "; // Save each cell to the file piece by piece
                         }
-                        std::cout << "\n";
-                        outputFile << "\n"; // REVISION: Keep one row per line on the output file
+                        // std::cout << "\n"; //omit
+                        outFile << "\n"; // Keep one row per line on the output file
                     }
 
-                    std::cout << "\n";
-                    outputFile << "\n"; // REVISION: Seperate the sections with this blank line
+                    // std::cout << "\n"; //omit
+                    outFile << "\n"; // Seperate the sections with this blank line
                 }
 
-                // REVISION: Add the total solution count as the final line of the file
-                outputFile << "Solutions found: " << solutionCount << "\n";
+                // Add the total solution count as the final line after all solutions written
+                outFile << "Solutions found: " << solutionCount << "\n\n";
             }
-
-            // REVISION: Close the output file after all results have been put on it
-            outputFile.close();
         }
     };
 
@@ -357,10 +354,19 @@
             "puzzle5.txt"
         };
 
-        // Process each puzzle file sequentially
-        for (const std::string& filename : puzzleFiles) {
-            SudokuPuzzle::processPuzzle(filename);
+        // MODIFICATION: Open a single output file stream named "solutions.txt" for all puzzle solutions.
+        std::ofstream outFile("solutions.txt");
+        if (!outFile.is_open()) {
+            std::cerr << "Error: Could not open solutions.txt for writing.\n";
+            return 1;
         }
+
+        // Process each puzzle file sequentially, and write the complete output stream to the file.
+        for (const std::string& filename : puzzleFiles) {
+            SudokuPuzzle::processPuzzle(filename, outFile);
+        }
+
+        outFile.close(); //close the solution file
 
         return 0;
     }
